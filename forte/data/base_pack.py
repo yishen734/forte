@@ -305,7 +305,7 @@ class BasePack(EntryContainer[EntryType, LinkType, GroupType]):
 
     @abstractmethod
     def get_data(
-            self, context_type, request, skip_k
+            self, context_type, request, skip_k=0
     ) -> Iterator[Dict[str, Any]]:
         raise NotImplementedError
 

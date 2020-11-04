@@ -33,6 +33,11 @@ should be able to learn such restriction from data itself.
 
 ## Getting the data
 
+- You can run this script to download and convert the example dataset:
+```bash 
+python download_data.py
+```
+
 - We use the CoNLL-2003 NER dataset for this example. Please refer to [https://www.clips.uantwerpen.be/conll2003/ner/](https://www.clips.uantwerpen.be/conll2003/ner/)
 for instructions on how to download the dataset. The `config_data.yml` file looks for the data in
 `ner_data/conll03_english/{train/dev/test}`. If the structure of your dataset 

@@ -223,3 +223,4 @@ docs/_build
 ### Project ###
 en_ewt_models/
 fr_gsd_models/
+/examples/ner/ner_data/
