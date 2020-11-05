@@ -53,7 +53,7 @@ class CoNLLNERTrainer(BaseTrainer):
         self.ner_alphabet = None
 
         self.config_model = None
-        self.config_data = None
+        self.config_training = None
         self.normalize_func = None
 
         self.device = None
@@ -88,8 +88,8 @@ class CoNLLNERTrainer(BaseTrainer):
 
         word_embedding_table = resources.get('word_embedding_table')
 
-        self.config_model = configs.config_model
-        self.config_data = configs.config_data
+        self.config_model = configs.model
+        self.config_training = configs.training
 
         self.normalize_func = utils.normalize_digit_word
 
@@ -151,8 +151,8 @@ class CoNLLNERTrainer(BaseTrainer):
             char_ids = []
             for char in word:
                 char_ids.append(self.char_alphabet.get_index(char))
-            if len(char_ids) > self.config_data.max_char_length:
-                char_ids = char_ids[: self.config_data.max_char_length]
+            if len(char_ids) > self.config_training.max_char_length:
+                char_ids = char_ids[: self.config_training.max_char_length]
             char_id_seqs.append(char_ids)
 
             word = self.normalize_func(word)
@@ -191,7 +191,7 @@ class CoNLLNERTrainer(BaseTrainer):
         instances = self.train_instances_cache
         random.shuffle(self.train_instances_cache)
         data_iterator = torchtext.data.iterator.pool(
-            instances, self.config_data.batch_size_tokens,
+            instances, self.config_training.batch_size_tokens,
             key=lambda x: x.length(),  # length of word_ids
             batch_size_fn=_batch_size_fn,
             random_shuffler=torchtext.data.iterator.RandomShuffler())
@@ -233,7 +233,7 @@ class CoNLLNERTrainer(BaseTrainer):
         self.request_eval()
         self.train_instances_cache.clear()
 
-        if epoch >= self.config_data.num_epochs:
+        if epoch >= self.config_training.num_epochs:
             self.request_stop_train()
 
     @torch.no_grad()
@@ -250,8 +250,8 @@ class CoNLLNERTrainer(BaseTrainer):
         losses = 0
         val_data = list(instances)
         for i in tqdm(
-                range(0, len(val_data), self.config_data.test_batch_size)):
-            b_data = val_data[i: i + self.config_data.test_batch_size]
+                range(0, len(val_data), self.config_training.test_batch_size)):
+            b_data = val_data[i: i + self.config_training.test_batch_size]
             batch = self.get_batch_tensor(b_data, device=self.device)
 
             word, char, labels, masks, unused_lengths = batch
@@ -381,8 +381,8 @@ class CoNLLNERTrainer(BaseTrainer):
         )
 
         char_length = min(
-            self.config_data.max_char_length,
-            char_length + self.config_data.num_char_pad,
+            self.config_training.max_char_length,
+            char_length + self.config_training.num_char_pad,
         )
 
         wid_inputs = np.empty([batch_size, batch_length], dtype=np.int64)

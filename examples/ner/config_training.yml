@@ -6,5 +6,3 @@ num_epochs: 200
 batch_size_tokens: 512
 test_batch_size: 16
 
-max_char_length: 45
-num_char_pad: 2

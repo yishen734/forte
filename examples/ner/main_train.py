@@ -28,14 +28,18 @@ logging.basicConfig(level=logging.DEBUG)
 
 
 def main():
-    config_data = yaml.safe_load(open("config_data.yml", "r"))
+    config_training = yaml.safe_load(open("config_training.yml", "r"))
     config_model = yaml.safe_load(open("config_model.yml", "r"))
     config_preprocess = yaml.safe_load(open("config_preprocessor.yml", "r"))
 
     # All the configs
     config = Config({}, default_hparams=None)
-    config.add_hparam('config_data', config_data)
-    config.add_hparam('config_model', config_model)
+
+    predictor_config = Config({}, default_hparams=None)
+    predictor_config.add_hparam('batcher', {"batch_size": 16})
+
+    config.add_hparam('training', config_training)
+    config.add_hparam('model', config_model)
     config.add_hparam('preprocessor', config_preprocess)
     config.add_hparam('reader', {})
     config.add_hparam('evaluator', {})

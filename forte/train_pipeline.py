@@ -49,12 +49,14 @@ class TrainPipeline:
         self.dev_reader = dev_reader
         self.trainer = trainer
 
-        if predictor is not None:
-            self.predictor = predictor
-
-        if evaluator is not None:
-            self.evaluator = evaluator
-            self.evaluator.initialize(self.resource, self.configs.evaluator)
+        self.has_predictor = False
+        if predictor is not None and evaluator is not None:
+            self.validate_pipeline = Pipeline()
+            self.validate_pipeline.set_reader(dev_reader)
+            self.validate_pipeline.add(predictor, configs.model)
+            self.validate_pipeline.add(evaluator)
+            self.validate_pipeline.initialize()
+            self.has_predictor = True
 
     def run(self):
         logging.info("Preparing the pipeline")
@@ -65,18 +67,6 @@ class TrainPipeline:
         #   the resources
         self.trainer.initialize(self.resource, self.configs)
 
-        # The new system does not allows undefined configs, so we
-        #  take only the required configs for the predictor.
-        predictor_config = Config({}, default_hparams=None)
-        predictor_config.add_hparam('config_data', self.configs.config_data)
-        predictor_config.add_hparam('config_model', self.configs.config_model)
-        predictor_config.add_hparam('batcher', {"batch_size": 16})
-
-        if self.predictor is not None:
-            logger.info("Initializing the predictor")
-            self.predictor.initialize(
-                self.resource, predictor_config)
-
         logging.info("The pipeline is training")
         self.train()
         self.finish()
@@ -86,14 +76,14 @@ class TrainPipeline:
         prepare_pl.set_reader(self.train_reader)
         for p in self.preprocessors:
             prepare_pl.add(p, self.configs.preprocessor)
-        prepare_pl.run(self.configs.config_data.train_path)
+        prepare_pl.run(self.configs.training.train_path)
 
     def train(self):
         epoch = 0
         while True:
             epoch += 1
             for pack in self.train_reader.iter(
-                    self.configs.config_data.train_path):
+                    self.configs.training.train_path):
                 for instance in pack.get_data(**self.trainer.data_request()):
                     self.trainer.consume(instance)
 
@@ -109,28 +99,26 @@ class TrainPipeline:
             logging.info("End of epoch %d", epoch)
 
     def _validate(self, epoch: int):
-        validation_result = {"epoch": epoch}
+        validation_result = {
+            "epoch": epoch,
+            "dev": {},
+            "test": {}
+        }
 
-        if self.predictor is not None:
-            for pack in self.dev_reader.iter(
-                    self.configs.config_data.val_path):
-                predicted_pack = pack.view()
-                self.predictor.process(predicted_pack)
-                self.evaluator.consume_next(predicted_pack, pack)
-            validation_result["eval"] = self.evaluator.get_result()
+        if self.has_predictor:
+            self.validate_pipeline.process_dataset(
+                self.configs.training.val_path)
+            for name, result in self.validate_pipeline.evaluate():
+                validation_result['dev'][name] = result
 
-        if self.evaluator is not None:
-            for pack in self.dev_reader.iter(
-                    self.configs.config_data.test_path):
-                predicted_pack = pack.view()
-                self.predictor.process(predicted_pack)
-                self.evaluator.consume_next(predicted_pack, pack)
-            validation_result["test"] = self.evaluator.get_result()
-
+            self.validate_pipeline.process_dataset(
+                self.configs.training.test_path)
+            for name, result in self.validate_pipeline.evaluate():
+                validation_result['test'][name] = result
         return validation_result
 
     def finish(self):
         self.train_reader.finish(self.resource)
         self.dev_reader.finish(self.resource)
         self.trainer.finish(self.resource)
-        self.predictor.finish(self.resource)
+        self.validate_pipeline.finish()

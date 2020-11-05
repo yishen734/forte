@@ -21,7 +21,7 @@ from forte.data.readers.conll03_reader import CoNLL03Reader
 from forte.processors.ner_predictor import CoNLLNERPredictor
 from ft.onto.base_ontology import Token, Sentence, EntityMention
 
-config_data = yaml.safe_load(open("config_data.yml", "r"))
+config_data = yaml.safe_load(open("config_training.yml", "r"))
 config_model = yaml.safe_load(open("config_model.yml", "r"))
 
 config = Config({}, default_hparams=None)
