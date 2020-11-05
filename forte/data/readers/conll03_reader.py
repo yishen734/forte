@@ -49,7 +49,6 @@ class CoNLL03Reader(PackReader):
 
     def _parse_pack(self, file_path: str) -> Iterator[DataPack]:
         pack = DataPack()
-        doc = codecs.open(file_path, "r", encoding="utf8")
 
         text = ""
         offset = 0
@@ -58,50 +57,50 @@ class CoNLL03Reader(PackReader):
         sentence_begin = 0
         sentence_cnt = 0
 
-        for line in doc:
-            line = line.strip()
+        with open(file_path, 'r', encoding='utf8') as doc:
+            for line in doc:
+                line = line.strip()
 
-            if line != "" and not line.startswith("#"):
-                conll_components = line.split()
+                if line != "" and not line.startswith("#"):
+                    conll_components = line.split()
 
-                word = conll_components[1]
-                pos = conll_components[2]
-                chunk_id = conll_components[3]
-                ner_tag = conll_components[4]
+                    word = conll_components[1]
+                    pos = conll_components[2]
+                    chunk_id = conll_components[3]
+                    ner_tag = conll_components[4]
 
-                word_begin = offset
-                word_end = offset + len(word)
+                    word_begin = offset
+                    word_end = offset + len(word)
 
-                # Add tokens.
-                token = Token(pack, word_begin, word_end)
-                token.pos = pos
-                token.chunk = chunk_id
-                token.ner = ner_tag
+                    # Add tokens.
+                    token = Token(pack, word_begin, word_end)
+                    token.pos = pos
+                    token.chunk = chunk_id
+                    token.ner = ner_tag
 
-                text += word + " "
-                offset = word_end + 1
-                has_rows = True
-            else:
-                if not has_rows:
-                    # Skip consecutive empty lines.
-                    continue
-                # add sentence
+                    text += word + " "
+                    offset = word_end + 1
+                    has_rows = True
+                else:
+                    if not has_rows:
+                        # Skip consecutive empty lines.
+                        continue
+                    # add sentence
+                    Sentence(pack, sentence_begin, offset - 1)
+
+                    sentence_begin = offset
+                    sentence_cnt += 1
+                    has_rows = False
+
+            if has_rows:
+                # Add the last sentence if exists.
                 Sentence(pack, sentence_begin, offset - 1)
-
-                sentence_begin = offset
                 sentence_cnt += 1
-                has_rows = False
 
-        if has_rows:
-            # Add the last sentence if exists.
-            Sentence(pack, sentence_begin, offset - 1)
-            sentence_cnt += 1
+            pack.set_text(text, replace_func=self.text_replace_operation)
 
-        pack.set_text(text, replace_func=self.text_replace_operation)
+            Document(pack, 0, len(text))
 
-        Document(pack, 0, len(text))
-
-        pack.pack_name = file_path
-        doc.close()
+            pack.pack_name = file_path
 
         yield pack

@@ -284,8 +284,7 @@ class CoNLLNERPredictor(FixedSizeBatchProcessor):
         r"""Default config for NER Predictor"""
 
         configs = super().default_configs()
-        # TODO: Batcher in NER need to be update to use the sytem one.
-        configs["batcher"] = {"batch_size": 10}
+        # TODO: Batcher in NER need to be update to use the system one.
 
         more_configs = {
             "config_data": {

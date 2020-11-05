@@ -182,7 +182,7 @@ class Pipeline(Generic[PackType]):
     def set_reader(self, reader: BaseReader,
                    config: Optional[Union[Config, Dict[str, Any]]] = None):
         self._reader = reader
-        self._reader_config = reader.make_configs(config)
+        self._reader_config = config
 
     @property
     def reader(self):
@@ -210,7 +210,7 @@ class Pipeline(Generic[PackType]):
 
         component.assign_manager(self._proc_mgr)
         self._components.append(component)
-        self.processor_configs.append(component.make_configs(config))
+        self.processor_configs.append(config)
 
         if selector is None:
             self._selectors.append(DummySelector())

@@ -50,7 +50,7 @@ class PipelineComponent(Generic[PackType]):
                 component.
         """
         self.resources = resources
-        self.configs = configs
+        self.configs = self.make_configs(configs)
 
     def add_entry(self, pack: BasePack, entry: Entry):
         """

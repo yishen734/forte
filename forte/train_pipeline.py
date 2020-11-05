@@ -59,21 +59,30 @@ class TrainPipeline:
     def run(self):
         logging.info("Preparing the pipeline")
         self.prepare()
-        logging.info("Initializing the trainer")
 
-        # initialize the pipeline after prepare step, since prepare will update
-        # the resources
+        logging.info("Initializing the trainer")
+        # Initialize the pipeline after prepare step, since prepare will update
+        #   the resources
         self.trainer.initialize(self.resource, self.configs)
+
+        # The new system does not allows undefined configs, so we
+        #  take only the required configs for the predictor.
+        predictor_config = Config({}, default_hparams=None)
+        predictor_config.add_hparam('config_data', self.configs.config_data)
+        predictor_config.add_hparam('config_model', self.configs.config_model)
+        predictor_config.add_hparam('batcher', {"batch_size": 16})
+
         if self.predictor is not None:
             logger.info("Initializing the predictor")
-            self.predictor.initialize(self.resource, self.configs)
+            self.predictor.initialize(
+                self.resource, predictor_config)
 
         logging.info("The pipeline is training")
         self.train()
         self.finish()
 
     def prepare(self):
-        prepare_pl = Pipeline()
+        prepare_pl = Pipeline(self.resource)
         prepare_pl.set_reader(self.train_reader)
         for p in self.preprocessors:
             prepare_pl.add(p, self.configs.preprocessor)

@@ -55,10 +55,11 @@ class BaseBatchProcessor(BaseProcessor[PackType], ABC):
         self.batcher: ProcessingBatcher = self.define_batcher()
         self.use_coverage_index = False
 
-    def initialize(self, resources: Resources, configs: Optional[Config]):
+    def initialize(self, resources: Resources, configs: Config):
         super().initialize(resources, configs)
 
         assert configs is not None
+
         try:
             self.batcher.initialize(configs.batcher)
         except AttributeError as e:

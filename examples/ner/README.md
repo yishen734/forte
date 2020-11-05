@@ -45,9 +45,11 @@ is different, please update the YAML file accordingly.
 
 - We use GloVE vectors for word embeddings. Specifically, we use GloVE vectors trained on 6 
 billion tokens. Download them here - [GloVE](http://nlp.stanford.edu/data/glove.6B.zip). 
-Download and extract the folder in `ner_data/`.
+Download and extract the folder in `ner_data/`. Or you can simply run
 
-
+```bash
+python download_glove.py
+```
  
 ## Install the dependencies
 

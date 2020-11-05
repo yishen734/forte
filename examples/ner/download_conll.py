@@ -16,21 +16,33 @@ import os
 from forte.data.data_utils import maybe_download
 
 
-def transform(ifile, ofile):
+def transform(input_file, output_file_base):
     # From https://github.com/XuezheMax/NeuroNLP2/issues/9
-    dir_name = os.path.dirname(ofile)
+    dir_name = os.path.dirname(output_file_base)
 
     if not os.path.exists(dir_name):
         os.makedirs(dir_name, exist_ok=True)
 
-    print(f"Converting to new file {ofile}")
+    print(f"Converting to new file {output_file_base}")
 
-    with open(ifile, 'r') as reader, open(ofile, 'w') as writer:
+    with open(input_file, 'r') as reader:
         prev = 'O'
-
         idx = 0
+        doc_idx = 0
+
+        writer = open(f'{output_file_base}_{doc_idx}.conll', 'w')
+
         for line in reader:
             line = line.strip()
+
+            if line.startswith('-DOCSTART-'):
+                doc_idx += 1
+                idx = 0
+
+                # Write to new file
+                writer.close()
+                writer = open(f'{output_file_base}_{doc_idx}.conll', 'w')
+
             if len(line) == 0:
                 prev = 'O'
                 writer.write('\n')
@@ -72,10 +84,10 @@ maybe_download(
 )
 
 transform(os.path.join(out_path, 'raw', 'eng.testa'),
-          os.path.join(out_path, 'dev', 'dev.conll'))
+          os.path.join(out_path, 'dev', 'dev'))
 
 transform(os.path.join(out_path, 'raw', 'eng.testb'),
-          os.path.join(out_path, 'test', 'test.conll'))
+          os.path.join(out_path, 'test', 'test'))
 
 transform(os.path.join(out_path, 'raw', 'eng.train'),
-          os.path.join(out_path, 'train', 'train.conll'))
+          os.path.join(out_path, 'train', 'train'))
