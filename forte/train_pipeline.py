@@ -76,7 +76,7 @@ class TrainPipeline:
         prepare_pl = Pipeline()
         prepare_pl.set_reader(self.train_reader)
         for p in self.preprocessors:
-            prepare_pl.add(p)
+            prepare_pl.add(p, self.configs.preprocessor)
         prepare_pl.run(self.configs.config_data.train_path)
 
     def train(self):

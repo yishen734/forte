@@ -14,6 +14,7 @@
 
 import logging
 from collections import Counter
+from typing import Any
 
 import numpy as np
 import torch
@@ -22,7 +23,7 @@ from forte.common import Resources
 from forte.common.configuration import Config
 from forte.data.data_pack import DataPack
 from forte.models.ner.utils import load_glove_embedding, normalize_digit_word
-from forte.processors import Alphabet
+from forte.processors import Alphabet, Dict
 from forte.processors import VocabularyProcessor
 from ft.onto.base_ontology import Token, Sentence
 
@@ -141,3 +142,15 @@ class CoNLL03VocabularyProcessor(VocabularyProcessor):
             char_alphabet=char_alphabet,
             ner_alphabet=ner_alphabet,
             word_embedding_table=word_embedding_table)
+
+    @classmethod
+    def default_configs(cls) -> Dict[str, Any]:
+        r"""Returns the default configuration of the vocab processor.
+        """
+        config = super().default_configs()
+        config.update({
+            'embedding_path': None,
+            'min_frequency': 1,
+            'normalize_digit': True
+        })
+        return config
