@@ -35,9 +35,6 @@ def main():
     # All the configs
     config = Config({}, default_hparams=None)
 
-    predictor_config = Config({}, default_hparams=None)
-    predictor_config.add_hparam('batcher', {"batch_size": 16})
-
     config.add_hparam('training', config_training)
     config.add_hparam('model', config_model)
     config.add_hparam('preprocessor', config_preprocess)

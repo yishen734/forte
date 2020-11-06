@@ -73,12 +73,9 @@ class CoNLLNERPredictor(FixedSizeBatchProcessor):
 
     def initialize(self, resources: Resources, configs: Config):
         super().initialize(resources, configs)
-
         self.resource = resources
-        self.config_model = configs.config_model
-        self.config_data = configs.config_data
 
-        resource_path = configs.config_model.resource_dir
+        resource_path = configs.resource_dir
 
         keys = {"word_alphabet", "char_alphabet", "ner_alphabet",
                 "word_embedding_table"}
@@ -118,7 +115,7 @@ class CoNLLNERPredictor(FixedSizeBatchProcessor):
         self.model.to(self.device)
         self.model.eval()
 
-        utils.set_random_seed(self.config_model.random_seed)
+        utils.set_random_seed(self.configs.random_seed)
 
     @torch.no_grad()
     def predict(self, data_batch: Dict[str, Dict[str, List[str]]]) \
@@ -133,8 +130,8 @@ class CoNLLNERPredictor(FixedSizeBatchProcessor):
                 char_ids = []
                 for char in word:
                     char_ids.append(self.char_alphabet.get_index(char))
-                if len(char_ids) > self.config_data.max_char_length:
-                    char_ids = char_ids[: self.config_data.max_char_length]
+                if len(char_ids) > self.config_model.max_char_length:
+                    char_ids = char_ids[: self.config_model.max_char_length]
                 char_id_seqs.append(char_ids)
 
                 word = self.normalize_func(word)
@@ -161,10 +158,9 @@ class CoNLLNERPredictor(FixedSizeBatchProcessor):
         return pred
 
     def load_model_checkpoint(self, model_path=None):
-        p = model_path if model_path is not None \
-            else self.config_model.model_path
+        p = model_path if model_path is not None else self.configs.model_path
         ckpt = torch.load(p, map_location=self.device)
-        logger.info(f"Restoring NER model from {self.config_model.model_path}")
+        logger.info(f"Restoring NER model from {self.configs.model_path}")
         self.model.load_state_dict(ckpt["model"])
 
     def pack(self, data_pack: DataPack,
@@ -244,8 +240,8 @@ class CoNLLNERPredictor(FixedSizeBatchProcessor):
         )
 
         char_length = min(
-            self.config_data.max_char_length,
-            char_length + self.config_data.num_char_pad,
+            self.config_model.max_char_length,
+            char_length + self.config_model.num_char_pad,
         )
 
         wid_inputs = np.empty([batch_size, batch_length], dtype=np.int64)
@@ -286,7 +282,7 @@ class CoNLLNERPredictor(FixedSizeBatchProcessor):
         configs = super().default_configs()
         # TODO: Batcher in NER need to be update to use the system one.
 
-        more_configs = {
+        configs.update({
             "max_char_length": 45,
             "num_char_pad": 2,
 
@@ -334,7 +330,6 @@ class CoNLLNERPredictor(FixedSizeBatchProcessor):
             "batcher": {
                 "batch_size": 16
             }
-        }
+        })
 
-        configs.update(more_configs)
         return configs

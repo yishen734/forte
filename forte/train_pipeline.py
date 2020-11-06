@@ -30,6 +30,7 @@ class TrainPipeline:
     def __init__(self, train_reader: BaseReader, trainer: BaseTrainer,
                  dev_reader: BaseReader, configs: Config,
                  preprocessors: Optional[List[BaseProcessor]] = None,
+                 # TODO: there can be multiple evaluators.
                  evaluator: Optional[Evaluator] = None,
                  predictor: Optional[BaseProcessor] = None):
         self.resource = Resources()
@@ -50,12 +51,12 @@ class TrainPipeline:
         self.trainer = trainer
 
         self.has_predictor = False
+        self.eval_name = evaluator.name
         if predictor is not None and evaluator is not None:
-            self.validate_pipeline = Pipeline()
+            self.validate_pipeline = Pipeline(self.resource)
             self.validate_pipeline.set_reader(dev_reader)
             self.validate_pipeline.add(predictor, configs.model)
             self.validate_pipeline.add(evaluator)
-            self.validate_pipeline.initialize()
             self.has_predictor = True
 
     def run(self):
@@ -66,6 +67,8 @@ class TrainPipeline:
         # Initialize the pipeline after prepare step, since prepare will update
         #   the resources
         self.trainer.initialize(self.resource, self.configs)
+
+        self.validate_pipeline.initialize()
 
         logging.info("The pipeline is training")
         self.train()
@@ -99,22 +102,23 @@ class TrainPipeline:
             logging.info("End of epoch %d", epoch)
 
     def _validate(self, epoch: int):
-        validation_result = {
-            "epoch": epoch,
-            "dev": {},
-            "test": {}
-        }
+        validation_result = {'epoch': epoch}
 
         if self.has_predictor:
+            print('Running from ', self.configs.training.val_path)
+
             self.validate_pipeline.process_dataset(
                 self.configs.training.val_path)
             for name, result in self.validate_pipeline.evaluate():
-                validation_result['dev'][name] = result
+                if name == self.eval_name:
+                    validation_result['dev'] = result
 
             self.validate_pipeline.process_dataset(
                 self.configs.training.test_path)
             for name, result in self.validate_pipeline.evaluate():
-                validation_result['test'][name] = result
+                if name == self.eval_name:
+                    validation_result['test'] = result
+
         return validation_result
 
     def finish(self):

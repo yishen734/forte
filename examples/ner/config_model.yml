@@ -40,6 +40,9 @@ random_seed: 1234
 initializer:
   "type": "xavier_uniform_"
 
+batcher:
+  "batch_size": 16
+
 # path to save model
 model_path: "resources/best_ner_crf_model.ckpt"
 

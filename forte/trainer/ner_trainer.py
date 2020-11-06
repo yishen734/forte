@@ -151,8 +151,8 @@ class CoNLLNERTrainer(BaseTrainer):
             char_ids = []
             for char in word:
                 char_ids.append(self.char_alphabet.get_index(char))
-            if len(char_ids) > self.config_training.max_char_length:
-                char_ids = char_ids[: self.config_training.max_char_length]
+            if len(char_ids) > self.config_model.max_char_length:
+                char_ids = char_ids[: self.config_model.max_char_length]
             char_id_seqs.append(char_ids)
 
             word = self.normalize_func(word)
@@ -273,17 +273,17 @@ class CoNLLNERTrainer(BaseTrainer):
         """
 
         if self.__past_dev_result is None or \
-                (eval_result["eval"]["f1"] >
-                 self.__past_dev_result["eval"]["f1"]):
+                (eval_result["dev"]["f1"] >
+                 self.__past_dev_result["dev"]["f1"]):
             self.__past_dev_result = eval_result
             logger.info("Validation f1 increased, saving model")
             self.__save_model_checkpoint()
 
         best_epoch = self.__past_dev_result["epoch"]
-        acc, prec, rec, f1 = (self.__past_dev_result["eval"]["accuracy"],
-                              self.__past_dev_result["eval"]["precision"],
-                              self.__past_dev_result["eval"]["recall"],
-                              self.__past_dev_result["eval"]["f1"])
+        acc, prec, rec, f1 = (self.__past_dev_result["dev"]["accuracy"],
+                              self.__past_dev_result["dev"]["precision"],
+                              self.__past_dev_result["dev"]["recall"],
+                              self.__past_dev_result["dev"]["f1"])
         logger.info(f"Best val acc: {acc: 0.3f}, precision: {prec:0.3f}, "
                     f"recall: {rec:0.3f}, F1: {f1:0.3f}, epoch={best_epoch}")
 
@@ -381,8 +381,8 @@ class CoNLLNERTrainer(BaseTrainer):
         )
 
         char_length = min(
-            self.config_training.max_char_length,
-            char_length + self.config_training.num_char_pad,
+            self.config_model.max_char_length,
+            char_length + self.config_model.num_char_pad,
         )
 
         wid_inputs = np.empty([batch_size, batch_length], dtype=np.int64)
